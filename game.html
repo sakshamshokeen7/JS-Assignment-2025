@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Whack a Mole - Animated</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .mole {
+      transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+      transform: scale(0);
+      opacity: 0;
+      top:100%;
+    }
+
+    .mole.show {
+      transform: scale(1);
+      opacity: 1;
+      top:0;
+    }
+  </style>
+</head>
+<body class="bg-cover bg-center bg-no-repeat min-h-screen text-center font-sans" style="background-image: url('43f45b0c-a311-48f0-bc92-aa4c43bd0134.jpg');">
+
+  <h1 class="text-4xl font-bold pt-6 text-white drop-shadow">Whack a Mole 🐹</h1>
+  <div class="mt-4 text-2xl text-white drop-shadow">Score: <span id="score" class="font-bold">0</span></div>
+  <div class="text-xl text-white drop-shadow mb-4">Time Left: <span id="time-left" class="font-semibold">30</span> seconds</div>
+
+  <button id="start-btn" class="px-6 py-2 bg-green-600 text-white rounded-lg mb-6 hover:bg-green-700 transition">Start / Restart</button>
+
+  <div class="grid grid-cols-3 gap-6 w-fit mx-auto p-4">
+ <div class="w-24 h-24 relative overflow-hidden">
+  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
+</div>
+<div class="w-24 h-24 bg-transparent relative overflow-hidden">
+  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
+</div>
+<div class="w-24 h-24 bg-transparent relative overflow-hidden">
+  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
+</div>
+<div class="w-24 h-24 bg-transparent relative overflow-hidden">
+  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
+</div>
+<div class="w-24 h-24 bg-transparent relative overflow-hidden">
+  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
+</div>
+<div class="w-24 h-24 bg-transparent relative overflow-hidden">
+  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
+</div>
+<div class="w-24 h-24 bg-transparent relative overflow-hidden">
+  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
+</div>
+<div class="w-24 h-24 bg-transparent relative overflow-hidden">
+  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
+</div>
+<div class="w-24 h-24 bg-transparent relative overflow-hidden">
+  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
+</div>
+
+</div>
+
+
+  <audio id="whack-sound" src="https://www.fesliyanstudios.com/play-mp3/387" preload="auto"></audio>
+
+  <script>
+    const holes = document.querySelectorAll('.w-24');
+    const scoreDisplay = document.getElementById('score');
+    const timeLeftDisplay = document.getElementById('time-left');
+    const startBtn = document.getElementById('start-btn');
+    const sound = document.getElementById('whack-sound');
+
+    let score = 0;
+    let gameTime = 30;
+    let currentHole = null;
+    let moleTimer;
+    let countdownTimer;
+
+    function randomHole() {
+      document.querySelectorAll('.mole').forEach(m => m.classList.remove('show'));
+      const index = Math.floor(Math.random() * holes.length);
+      currentHole = holes[index].querySelector('.mole');
+      currentHole.classList.add('show');
+    }
+
+    function startGame() {
+      score = 0;
+      gameTime = 30;
+      scoreDisplay.textContent = score;
+      timeLeftDisplay.textContent = gameTime;
+
+      clearInterval(moleTimer);
+      clearInterval(countdownTimer);
+
+      moleTimer = setInterval(randomHole, 800);
+      countdownTimer = setInterval(() => {
+        gameTime--;
+        timeLeftDisplay.textContent = gameTime;
+        if (gameTime === 0) {
+          clearInterval(moleTimer);
+          clearInterval(countdownTimer);
+          document.querySelectorAll('.mole').forEach(m => m.classList.remove('show'));
+          alert("⏱️ Time's up! Your score is: " + score);
+        }
+      }, 1000);
+    }
+
+    document.querySelectorAll('.mole').forEach(mole => {
+      mole.addEventListener('click', () => {
+        if (mole === currentHole && mole.classList.contains('show')) {
+          score++;
+          scoreDisplay.textContent = score;
+          mole.classList.remove('show');
+          sound.currentTime = 0;
+          sound.play();
+        }
+      });
+    });
+
+    startBtn.addEventListener('click', startGame);
+  </script>
+</body>
+</html>
