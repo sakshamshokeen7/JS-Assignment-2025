@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-blue-100">
+  <header>
+    <h1 class="text-3xl font-bold mb-6 text-center mt-4">
+      ⚡⚡ MY STORE YEEAAHH
+    </h1>
+  </header>
+
+  <div class="flex flex-wrap gap-3 justify-center mb-6" id="tabs"></div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4" id="items"></div>
+
+  <script>
+    const THAT_URL = "http://43.205.110.71:8000";
+    window.allItems = [];
+
+    async function fetch_data() {
+      try {
+        document.getElementById('items').innerHTML = '<p>Loading...</p>';
+
+        const [categories, items] = await Promise.all([
+          fetch(`${THAT_URL}/categories`).then(res => res.json()),
+          fetch(`${THAT_URL}/items`).then(res => res.json()) 
+        ]);
+
+        window.allItems = items;
+        renderTabs(categories);
+        renderItems(items.filter(item => item.category === categories[0].category));
+
+      } catch (err) {
+        console.error('humpe to hai hi 9', err);
+        document.getElementById('items').innerHTML = '<p class="text-red-600">humpe to hai hi 9</p>';
+        const meme =document.createElement('div');
+       meme.style.backgroundImage = "url('arpitbala.png')";
+        meme.style.width = "200px";
+  meme.style.height = "200px";
+  meme.style.backgroundSize = "cover";
+  meme.style.margin = "1rem auto";
+  const itemsEl = document.getElementById('items');
+
+       itemsEl.appendChild(meme);
+
+      }
+    }
+
+    function renderTabs(categories) {
+      const tabsEl = document.getElementById('tabs');
+      tabsEl.innerHTML = '';
+
+      categories.forEach((cat, index) => {
+        const tab = document.createElement('button');
+        tab.className = 'px-4 py-2 rounded bg-white border border-gray-300 shadow-sm hover:bg-gray-200 transition text-sm'; 
+        tab.textContent = cat.category;
+
+        tab.onclick = () => {
+          document.querySelectorAll('#tabs button').forEach(t => t.classList.remove('bg-green-500', 'text-white'));
+          tab.classList.add('bg-green-500', 'text-black',);
+          renderItems(window.allItems.filter(item => item.category === cat.category));
+        };
+
+        tabsEl.appendChild(tab);
+      });
+    }
+
+    function renderItems(items) {
+      const itemsEl = document.getElementById('items');
+      itemsEl.innerHTML = '';
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-lg shadow-md p-4';
+
+        card.innerHTML = `
+          <img src="https://picsum.photos/seed/${item.id}/300/200" alt="${item.name}" class="w-full h-40 object-cover rounded mb-3">
+          <h2 class="font-semibold text-lg">${item.name}</h2>
+          <p class="text-gray-600 text-sm mt-1">PRICE:₹ ${item.price}</p>
+          <p class="text-gray-600 text-sm mt-1">Description:${item.description}</p>
+        `;
+
+        itemsEl.appendChild(card);
+      });
+    }
+
+    fetch_data();
+  </script>
+</body>
+</html>
