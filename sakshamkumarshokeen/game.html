@@ -10,13 +10,13 @@
       transition: transform 0.2s ease-out, opacity 0.2s ease-out;
       transform: scale(0);
       opacity: 0;
-      top:100%;
+      top: 100%;
     }
 
     .mole.show {
       transform: scale(1);
       opacity: 1;
-      top:0;
+      top: 0;
     }
   </style>
 </head>
@@ -24,50 +24,43 @@
 
   <h1 class="text-4xl font-bold pt-6 text-white drop-shadow">Whack a Mole 🐹</h1>
   <div class="mt-4 text-2xl text-white drop-shadow">Score: <span id="score" class="font-bold">0</span></div>
+  <div class="mt-4 text-2xl text-white drop-shadow">
+    Personal Best: <span id="best_score" class="font-bold">0</span>
+  </div>
   <div class="text-xl text-white drop-shadow mb-4">Time Left: <span id="time-left" class="font-semibold">30</span> seconds</div>
 
   <button id="start-btn" class="px-6 py-2 bg-green-600 text-white rounded-lg mb-6 hover:bg-green-700 transition">Start / Restart</button>
 
-  <div class="grid grid-cols-3 gap-6 w-fit mx-auto p-4">
- <div class="w-24 h-24 relative overflow-hidden">
-  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
-</div>
-<div class="w-24 h-24 bg-transparent relative overflow-hidden">
-  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
-</div>
-<div class="w-24 h-24 bg-transparent relative overflow-hidden">
-  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
-</div>
-<div class="w-24 h-24 bg-transparent relative overflow-hidden">
-  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
-</div>
-<div class="w-24 h-24 bg-transparent relative overflow-hidden">
-  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
-</div>
-<div class="w-24 h-24 bg-transparent relative overflow-hidden">
-  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
-</div>
-<div class="w-24 h-24 bg-transparent relative overflow-hidden">
-  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
-</div>
-<div class="w-24 h-24 bg-transparent relative overflow-hidden">
-  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
-</div>
-<div class="w-24 h-24 bg-transparent relative overflow-hidden">
-  <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
-</div>
-
-</div>
-
+  <div id="mole-grid" class="grid grid-cols-3 gap-6 w-fit mx-auto p-4"></div>
 
   <audio id="whack-sound" src="https://www.fesliyanstudios.com/play-mp3/387" preload="auto"></audio>
 
   <script>
+    const moleTile = `
+      <div class="w-24 h-24 bg-transparent relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-2 bg-red-300">
+          <div class="health-bar h-full bg-red-600 transition-all duration-300 ease-out" style="width: 100%;"></div>
+        </div>
+        <img src="hammer.png" class="hammer absolute w-12 h-12 top-0 left-1/2 transform -translate-x-1/2 -rotate-45 opacity-0 pointer-events-none transition-opacity duration-300" />
+        <img src="mole.png" class="mole w-full h-full object-cover cursor-pointer absolute top-full left-0 transition-transform duration-300 ease-out" />
+      </div>
+    `;
+
+    const grid = document.getElementById('mole-grid');
+    for (let i = 0; i < 9; i++) {
+      grid.insertAdjacentHTML('beforeend', moleTile);
+    }
+
     const holes = document.querySelectorAll('.w-24');
+    const moles = document.querySelectorAll('.mole');
     const scoreDisplay = document.getElementById('score');
     const timeLeftDisplay = document.getElementById('time-left');
     const startBtn = document.getElementById('start-btn');
     const sound = document.getElementById('whack-sound');
+    const bestScoreDisplay = document.getElementById('best_score');
+
+    const storedBest = localStorage.getItem('whackBest');
+    bestScoreDisplay.textContent = storedBest ? storedBest : 0;
 
     let score = 0;
     let gameTime = 30;
@@ -76,7 +69,7 @@
     let countdownTimer;
 
     function randomHole() {
-      document.querySelectorAll('.mole').forEach(m => m.classList.remove('show'));
+      moles.forEach(m => m.classList.remove('show'));
       const index = Math.floor(Math.random() * holes.length);
       currentHole = holes[index].querySelector('.mole');
       currentHole.classList.add('show');
@@ -88,6 +81,12 @@
       scoreDisplay.textContent = score;
       timeLeftDisplay.textContent = gameTime;
 
+      moles.forEach(mole => {
+        mole.health = 100;
+        const healthBar = mole.parentElement.querySelector('.health-bar');
+        healthBar.style.width = "100%";
+      });
+
       clearInterval(moleTimer);
       clearInterval(countdownTimer);
 
@@ -95,21 +94,44 @@
       countdownTimer = setInterval(() => {
         gameTime--;
         timeLeftDisplay.textContent = gameTime;
+
         if (gameTime === 0) {
           clearInterval(moleTimer);
           clearInterval(countdownTimer);
-          document.querySelectorAll('.mole').forEach(m => m.classList.remove('show'));
+          moles.forEach(m => m.classList.remove('show'));
+
+          const previousBest = parseInt(localStorage.getItem('whackBest') || '0');
+          if (score > previousBest) {
+            localStorage.setItem('whackBest', score);
+            bestScoreDisplay.textContent = score;
+          }
+
           alert("⏱️ Time's up! Your score is: " + score);
         }
       }, 1000);
     }
+    moles.forEach(mole => {
+      mole.health = 100;
 
-    document.querySelectorAll('.mole').forEach(mole => {
       mole.addEventListener('click', () => {
         if (mole === currentHole && mole.classList.contains('show')) {
           score++;
           scoreDisplay.textContent = score;
-          mole.classList.remove('show');
+
+          mole.health -= 34;
+          const healthBar = mole.parentElement.querySelector('.health-bar');
+          healthBar.style.width = mole.health + "%";
+          
+          const hammer = mole.parentElement.querySelector('.hammer');
+          hammer.classList.add('opacity-100');
+          setTimeout(() => hammer.classList.remove('opacity-100'), 300);
+
+          if (mole.health <= 0) {
+            mole.classList.remove('show');
+            mole.health = 100;
+            healthBar.style.width = "100%";
+          }
+
           sound.currentTime = 0;
           sound.play();
         }
