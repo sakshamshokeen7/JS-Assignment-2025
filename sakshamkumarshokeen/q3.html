@@ -8,40 +8,38 @@
 </head>
 <body class="bg-blue-100">
   <header>
-    <h1 class="text-3xl font-bold mb-6 text-center mt-4">
-      ⚡⚡ MY MEGA STORE YEAAAHHHH
-    </h1>
+    <h1 class="text-3xl font-bold mb-6 text-center mt-4">⚡⚡ MY MEGA STORE YEAAAHHHH</h1>
   </header>
 
   <div class="flex flex-wrap gap-3 justify-center mb-6" id="category_tabs"></div>
   <div class="flex flex-wrap gap-3 justify-center mb-6" id="tags_tabs"></div>
   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4" id="items"></div>
+  <div class="flex justify-center mt-6 mb-8" id="pagination_controls"></div>
 
   <script>
     const THAT_URL = "http://43.205.110.71:8000";
-    window.allItems = [];
+    let currentPage = 1;
+    const limit = 16;
+    let filteredItems = [];
 
     async function fetch_data() {
       try {
-        document.getElementById('items').innerHTML = '<p>Loading...</p>';
-
-        const [categories, items] = await Promise.all([
-          fetch(`${THAT_URL}/categories`).then(res => res.json()),
-          fetch(`${THAT_URL}/items`).then(res => res.json())
-        ]);
-
-        window.allItems = items;
-
+        const categories = await fetch(`${THAT_URL}/categories`).then(res => res.json());
         const allCategory = { category: "All" };
         const updatedCategories = [allCategory, ...categories];
-
         renderTabs(updatedCategories);
-        renderItems(items);
+
+        const items = await fetch(`${THAT_URL}/items`).then(res => res.json());
+        window.allItems = items;
+        filteredItems = items;
+
         renderTags(items);
+        renderItems(filteredItems.slice(0, limit));
+        renderPagination(currentPage, Math.ceil(filteredItems.length / limit));
 
       } catch (err) {
         console.error('humpe to hai hi 9', err);
-        document.getElementById('items').innerHTML = '<p class="text-red-600">humpe to hai hi 9</p>';
+        document.getElementById('items').innerHTML = '<p class="text-red-600 text-center">humpe to hai hi 9</p>';
         const meme = document.createElement('div');
         meme.style.backgroundImage = "url('arpitbala.png')";
         meme.style.width = "200px";
@@ -75,11 +73,13 @@
           tab.classList.remove('bg-white', 'text-black');
           tab.classList.add('bg-green-500', 'text-white');
 
-          const filteredItems = cat.category === "All"
+          filteredItems = cat.category === "All"
             ? window.allItems
             : window.allItems.filter(item => item.category === cat.category);
 
-          renderItems(filteredItems);
+          currentPage = 1;
+          renderItems(filteredItems.slice(0, limit));
+          renderPagination(currentPage, Math.ceil(filteredItems.length / limit));
         };
 
         tabsEl.appendChild(tab);
@@ -112,7 +112,10 @@
           tab.classList.remove('bg-white', 'text-black');
           tab.classList.add('bg-green-500', 'text-white');
 
-          renderItems(window.allItems.filter(item => item.tags?.includes(tag)));
+          filteredItems = window.allItems.filter(item => item.tags?.includes(tag));
+          currentPage = 1;
+          renderItems(filteredItems.slice(0, limit));
+          renderPagination(currentPage, Math.ceil(filteredItems.length / limit));
         };
 
         tabsEl.appendChild(tab);
@@ -136,6 +139,25 @@
 
         itemsEl.appendChild(card);
       });
+    }
+
+    function renderPagination(current, total) {
+      const container = document.getElementById('pagination_controls');
+      container.innerHTML = '';
+
+      for (let i = 1; i <= total; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = `mx-1 px-3 py-1 rounded ${i === current ? 'bg-blue-500 text-white' : 'bg-white text-black border'}`;
+        btn.onclick = () => {
+          currentPage = i;
+          const start = (i - 1) * limit;
+          const pageItems = filteredItems.slice(start, start + limit);
+          renderItems(pageItems);
+          renderPagination(currentPage, total);
+        };
+        container.appendChild(btn);
+      }
     }
 
     fetch_data();
