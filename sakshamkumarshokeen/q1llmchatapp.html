@@ -4,155 +4,154 @@
   <meta charset="UTF-8" />
   <title>LLM Chat Assistant</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
-    body {
-      background: linear-gradient(to bottom right, #1e1e2f, #2a2a3d);
-    }
-
-    .chat-bubble {
-      white-space: pre-wrap;
-      animation: fadeInScale 0.4s ease-out;
-    }
-
-    @keyframes fadeInScale {
-      0% {
-        transform: scale(0.95);
-        opacity: 0;
-      }
-      100% {
-        transform: scale(1);
-        opacity: 1;
-      }
-    }
-
-    .glass {
-      background: rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .spinner {
-      border: 4px solid transparent;
-      border-top: 4px solid #9f7aea;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      animation: spin 1s linear infinite;
-      margin: 12px auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    body { background: linear-gradient(to bottom right, #1e1e2f, #2a2a3d); }
+    .chat-bubble { white-space: pre-wrap; animation: fadeInScale 0.4s ease-out; }
+    @keyframes fadeInScale { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .glass { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .spinner { border: 4px solid transparent; border-top: 4px solid #9f7aea; border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; margin: 12px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
-<body class="text-gray-200 p-6 font-sans min-h-screen">
+<body class="flex h-screen text-gray-200 font-sans">
+  <aside class="w-56 bg-gray-800 p-4 text-white flex-shrink-0 h-full overflow-y-auto">
+    <button id="newChatBtn" class="w-full mb-4 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded text-sm">
+      + New Chat
+    </button>
+    <ul id="chatList" class="space-y-2 text-sm overflow-y-auto" style="max-height: calc(100vh - 4rem);"></ul>
+  </aside>
 
-  <div class="max-w-4xl mx-auto space-y-6">
-    <h1 class="text-5xl font-extrabold text-center bg-white text-transparent bg-clip-text drop-shadow-xl">
-      💬 LLM Chat Assistant
-    </h1>
+  <div class="flex-1 p-6 flex flex-col h-full">
+    <div class="max-w-4xl mx-auto space-y-6">
+      <h1 class="text-5xl font-extrabold text-center bg-white text-transparent bg-clip-text drop-shadow-xl">
+        💬 LLM Chat Assistant
+      </h1>
 
-    <div class="glass p-6 rounded-xl">
-      <label class="block text-sm font-semibold mb-2 text-gray-300">🔑 API Key</label>
-      <input id="apiKey" type="password" class="w-full p-3 bg-gray-800 text-white border border-gray-600 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="sk-or-...">
-    </div>
+      <div class="glass p-6 rounded-xl">
+        <label class="block text-sm font-semibold mb-2 text-gray-300">🔑 API Key</label>
+        <input id="apiKey" type="password" class="w-full p-3 bg-gray-800 text-white border border-gray-600 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="sk-or-...">
+      </div>
 
-    <div class="glass p-6 rounded-xl">
-      <label class="block text-sm font-semibold mb-2 text-gray-300">🧠 Choose a model</label>
-      <select id="modelSelect" class="w-full p-3 bg-gray-800 text-white border border-gray-600 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400">
-        <option value="openai/gpt-3.5-turbo">GPT-3.5 Turbo</option>
-        <option value="mistralai/mistral-7b-instruct:free">Mistral 7B</option>
-        <option value="meta-llama/llama-3-8b-instruct">LLaMA 3 8B</option>
-        <option value="google/gemini-pro">Gemini Pro</option>
-        <option value="anthropic/claude-3-sonnet">Claude 3 Sonnet</option>
-      </select>
-    </div>
+      <div class="glass p-6 rounded-xl">
+        <label class="block text-sm font-semibold mb-2 text-gray-300">🧠 Choose a model</label>
+        <select id="modelSelect" class="w-full p-3 bg-gray-800 text-white border border-gray-600 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          <option value="openai/gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          <option value="mistralai/mistral-7b-instruct:free">Mistral 7B</option>
+          <option value="meta-llama/llama-3-8b-instruct">LLaMA 3 8B</option>
+          <option value="google/gemini-pro">Gemini Pro</option>
+          <option value="anthropic/claude-3-sonnet">Claude 3 Sonnet</option>
+        </select>
+      </div>
 
-    <div id="chat" class="glass p-6 rounded-xl overflow-y-auto max-h-[500px]">
-    </div>
+      <div id="chat" class="glass p-6 rounded-xl overflow-y-auto flex-1">
+      </div>
 
-    <div id="loading" class="spinner hidden"></div>
+      <div id="loading" class="spinner hidden"></div>
 
-    <div class="flex items-center gap-4">
-      <textarea id="userInput" placeholder="Type your message..." class="flex-1 p-4 bg-gray-800 text-white border border-gray-600 rounded-xl shadow-md resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"></textarea>
-      <button onclick="sendMessage()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow-lg hover:opacity-90 transition duration-200">
-        ➤ Send
-      </button>
+      <div class="flex items-center gap-4">
+        <textarea id="userInput" placeholder="Type your message..." class="flex-1 p-4 bg-gray-800 text-white border border-gray-600 rounded-xl shadow-md resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"></textarea>
+        <button onclick="sendMessage()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow-lg hover:opacity-90 transition duration-200">
+          ➤ Send
+        </button>
+      </div>
     </div>
   </div>
 
   <script>
+    const newChatBtn = document.getElementById('newChatBtn');
+    const chatList = document.getElementById('chatList');
+    const SESSIONS_KEY = 'chatSessions';
+    let chatSessions = JSON.parse(localStorage.getItem(SESSIONS_KEY)) || [];
+    let currentSession = null;
+
+    function renderChatList() {
+      chatList.innerHTML = '';
+      chatSessions.forEach((s,i) => {
+        const li = document.createElement('li');
+        li.textContent = s.title;
+        li.className = 'cursor-pointer hover:text-indigo-300';
+        li.onclick = () => loadSession(i);
+        chatList.appendChild(li);
+      });
+    }
+
+    newChatBtn.onclick = () => {
+      const title = prompt('Session title:') || `Chat ${chatSessions.length+1}`;
+      currentSession = { title, messages: [] };
+      chatSessions.push(currentSession);
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(chatSessions));
+      renderChatList();
+      renderChat();
+    };
+
+    function loadSession(idx) {
+      currentSession = chatSessions[idx];
+      renderChat();
+    }
+
     const chatEl = document.getElementById('chat');
     const userInput = document.getElementById('userInput');
     const modelSelect = document.getElementById('modelSelect');
     const apiKeyInput = document.getElementById('apiKey');
     const loadingEl = document.getElementById('loading');
-
-    const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+    const chatHistory = currentSession ? currentSession.messages : [];
 
     function renderChat() {
       chatEl.innerHTML = '';
-      chatHistory.forEach(entry => {
+      (currentSession ? currentSession.messages : []).forEach(entry => {
         const bubble = document.createElement('div');
         bubble.className = `chat-bubble px-4 py-3 my-3 rounded-xl shadow ${
-          entry.role === 'user' ? 'bg-indigo-700 text-left' : 'bg-purple-700 text-left'
+          entry.role==='user'? 'bg-indigo-700 text-left' : 'bg-purple-700 text-left'
         }`;
-        const icon = entry.role === 'user' ? '🧍‍♂️' : '👾';
-        bubble.textContent = `${icon} ${entry.content}`;
+        bubble.innerHTML = (entry.role==='user'? '🧍‍♂️ ' : '👾 ') + marked.parse(entry.content);
         chatEl.appendChild(bubble);
       });
       chatEl.scrollTop = chatEl.scrollHeight;
     }
 
     userInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
+      if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
 
     async function sendMessage() {
+      if (!currentSession) { alert('Click New Chat'); return; }
       const prompt = userInput.value.trim();
-      const model = modelSelect.value;
       const apiKey = apiKeyInput.value.trim();
-
-      if (!prompt || !apiKey) {
-        alert('Please enter both a message and API key.');
-        return;
-      }
-
-      chatHistory.push({ role: 'user', content: prompt });
-      renderChat();
-      userInput.value = '';
-      localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+      const model = modelSelect.value;
+      if (!prompt||!apiKey) return alert('Enter both');
+      currentSession.messages.push({ role:'user', content:prompt }); renderChat(); userInput.value='';
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(chatSessions));
       loadingEl.classList.remove('hidden');
 
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-          'HTTP-Referer': window.location.origin + '/',
-          'X-Title': 'LLM Chat App',
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: chatHistory.slice(-10),
-        }),
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json', Authorization:`Bearer ${apiKey}`, 'HTTP-Referer':window.location.origin+'/', 'X-Title':'LLM Chat App'},
+        body: JSON.stringify({ model, messages: currentSession.messages.slice(-10), stream:true })
       });
-
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || 'No response from model.';
-      chatHistory.push({ role: 'assistant', content: reply });
-      localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+      const reader = res.body.getReader(); const dec=new TextDecoder('utf-8'); let full='';
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble bg-purple-700 px-4 py-3 my-3 rounded-xl shadow text-left';
+      bubble.innerHTML = '👾 ';
+      chatEl.appendChild(bubble);
+      while(true) {
+        const {done,value} = await reader.read(); if(done) break;
+        const chunk = dec.decode(value, {stream:true});
+        chunk.split('\n').forEach(line => {
+          if (!line.startsWith('data: ')) return;
+          const json = line.replace('data: ', '');
+          if (json==='[DONE]') return;
+          const parsed = JSON.parse(json);
+          const d = parsed.choices?.[0]?.delta?.content;
+          if (d) { full+=d; bubble.innerHTML = '👾 ' + marked.parse(full); chatEl.scrollTop = chatEl.scrollHeight; }
+        });
+      }
+      currentSession.messages.push({ role:'assistant', content:full });
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(chatSessions));
       loadingEl.classList.add('hidden');
-      renderChat();
     }
 
-    renderChat();
-    userInput.focus();
+    renderChatList();
   </script>
 </body>
 </html>
