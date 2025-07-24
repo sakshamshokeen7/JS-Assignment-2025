@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>LLM Chat Assistant</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     body { background: linear-gradient(to bottom right, #1e1e2f, #2a2a3d); }
     .chat-bubble { white-space: pre-wrap; animation: fadeInScale 0.4s ease-out; }
@@ -64,6 +63,20 @@
     const SESSIONS_KEY = 'chatSessions';
     let chatSessions = JSON.parse(localStorage.getItem(SESSIONS_KEY)) || [];
     let currentSession = null;
+     function simpleMarkdownParser(md) {
+  md = md.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
+  md = md.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
+  md = md.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+  md = md.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+  md = md.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+  md = md.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+  md = md.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+  md = md.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+  md = md.replace(/`(.*?)`/gim, '<code>$1</code>');
+  md = md.replace(/\[([^\[]+)\]\((.*?)\)/gim, '<a href="$2" target="_blank">$1</a>');
+  md = md.replace(/\n$/gim, '<br />');
+
+  return md.trim()};
 
     function renderChatList() {
       chatList.innerHTML = '';
@@ -104,7 +117,7 @@
         bubble.className = `chat-bubble px-4 py-3 my-3 rounded-xl shadow ${
           entry.role==='user'? 'bg-indigo-700 text-left' : 'bg-purple-700 text-left'
         }`;
-        bubble.innerHTML = (entry.role==='user'? '🧍‍♂️ ' : '👾 ') + marked.parse(entry.content);
+        bubble.innerHTML = (entry.role==='user'? '🧍‍♂️ ' : '👾 ') + simpleMarkdownParser(entry.content);
         chatEl.appendChild(bubble);
       });
       chatEl.scrollTop = chatEl.scrollHeight;
